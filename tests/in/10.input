@@ -1,0 +1,83 @@
+#include <stdio.h>
+
+#define PLAIN_CODE 1
+#define COMMENT_MULTI_LINE 2    /**/
+#define COMMENT_SINGLE_LINE 3   //
+#define IN_STRING 4
+
+/* one-item stack */
+static int buffer = EOF;
+
+/* stack functions */
+static int add(int);
+static int delete();
+static int value();
+
+int main(int argc, char *argv[]) {
+  if(argc != 2)
+    return -1;
+  FILE *f = fopen(argv[1], "r");
+  if(f == NULL)
+    return -2;
+  int c, state;
+  state = PLAIN_CODE;
+  while((c = fgetc(f)) != EOF) {
+    if(state == COMMENT_SINGLE_LINE) {
+      if(c == '\n') {
+        state = PLAIN_CODE;
+        putchar(c);
+      }
+    } else if(state == COMMENT_MULTI_LINE) {
+      if(c == '*')
+        add(c);
+      else if(value() == '*') {
+        if(c == '/')
+          state = PLAIN_CODE;
+        delete();
+      }
+    } else if(c == '/' && state == PLAIN_CODE) {
+      add(c);
+      if((c = fgetc(f)) == '/') {
+        state = COMMENT_SINGLE_LINE;
+        delete();
+      } else if(c == '*') {
+        state = COMMENT_MULTI_LINE;
+        delete();
+      } else {
+        putchar(delete());
+        if(c != EOF)
+          putchar(c);
+      }
+    } else if(c == '"') {
+      if(state == PLAIN_CODE)
+        state = IN_STRING;
+      else if(value() == '\\')
+        delete();
+      else /* state == IN_STRING && value != '\\' */
+        state = PLAIN_CODE;
+      putchar(c);
+    } else if(c == '\\' && state == IN_STRING) {
+      if(value() == '\\') /* "\\" */
+        delete();
+      else
+        add(c);
+      putchar(c);
+    } else
+      putchar(c);
+  }
+  return 0;
+}
+
+static int add(int c) {
+  return buffer = c;
+}
+
+static int delete() {
+  int tmp = buffer;
+  buffer = EOF;
+  return tmp;
+}
+
+static int value() {
+  return buffer;
+}

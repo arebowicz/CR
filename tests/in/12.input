@@ -1,0 +1,4 @@
+printf("'''\"\"\""); // aaa
+bbb
+printf("'''\"\"\""); /* ccc */ ddd
+eee
